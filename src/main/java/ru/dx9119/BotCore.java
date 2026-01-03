@@ -10,7 +10,6 @@ import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 import org.telegram.telegrambots.meta.generics.TelegramClient;
 import ru.dx9119.service.FileService;
 import ru.dx9119.service.MessageService;
-import ru.dx9119.service.PhotoService;
 
 import java.io.File;
 
@@ -18,14 +17,12 @@ import java.io.File;
 public class BotCore implements LongPollingSingleThreadUpdateConsumer {
     TelegramClient telegramClient;
     MessageService messageService;
-    PhotoService photoService;
     FileService fileService;
 
     public BotCore (String key){
         this.telegramClient = new OkHttpTelegramClient(key);
         this.fileService = new FileService(telegramClient);
         this.messageService = new MessageService();
-        this.photoService = new PhotoService();
     }
 
 
@@ -46,13 +43,20 @@ public class BotCore implements LongPollingSingleThreadUpdateConsumer {
                 if(text.equals("/action")){
                     telegramClient.execute(chatAction);
                 }
+                if (text.equals("/img")){
+                    telegramClient.execute(fileService.sendImageFromLocal(
+                            "img/album/",
+                            "img.png",
+                            update.getMessage().getChatId()
+                    ));
+                }
             }
 
             if (update.hasMessage() && update.getMessage().hasPhoto()){
-                telegramClient.execute(photoService.photoEcho(update));
+                telegramClient.execute(fileService.photoEcho(update));
 
                 // что пользователь загрузил
-                PhotoSize photo = photoService.getPhoto(update);
+                PhotoSize photo = fileService.getPhoto(update);
                 String filePath = fileService.getFilePath(photo);
                 System.out.println("Пользователь загрузил на сервер телеграм файл: " + filePath);
 
@@ -66,6 +70,4 @@ public class BotCore implements LongPollingSingleThreadUpdateConsumer {
         }
 
     }
-
-
 }
