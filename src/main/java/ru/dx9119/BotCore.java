@@ -4,25 +4,23 @@ import org.telegram.telegrambots.client.okhttp.OkHttpTelegramClient;
 import org.telegram.telegrambots.longpolling.util.LongPollingSingleThreadUpdateConsumer;
 
 import org.telegram.telegrambots.meta.api.methods.send.SendChatAction;
+import org.telegram.telegrambots.meta.api.methods.send.SendSticker;
+import org.telegram.telegrambots.meta.api.objects.InputFile;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.api.objects.photo.PhotoSize;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 import org.telegram.telegrambots.meta.generics.TelegramClient;
-import ru.dx9119.service.FileService;
-import ru.dx9119.service.MessageService;
 
 import java.io.File;
 
 
 public class BotCore implements LongPollingSingleThreadUpdateConsumer {
     TelegramClient telegramClient;
-    MessageService messageService;
-    FileService fileService;
+    Utils utils;
 
-    public BotCore (String key){
+    public BotCore(String key) {
         this.telegramClient = new OkHttpTelegramClient(key);
-        this.fileService = new FileService(telegramClient);
-        this.messageService = new MessageService();
+        this.utils = new Utils(telegramClient);
     }
 
 
@@ -31,38 +29,65 @@ public class BotCore implements LongPollingSingleThreadUpdateConsumer {
 
         try {
             if (update.hasMessage() && update.getMessage().hasText()) {
-                telegramClient.execute(messageService.textEcho(update));
+                telegramClient.execute(utils.textEcho(update));
 
                 String text = update.getMessage().getText();
 
                 // https://core.telegram.org/bots/api?#sendchataction
-                SendChatAction chatAction = SendChatAction.builder()
-                        .chatId(update.getMessage().getChatId())
-                        .action("typing")
-                        .build();
-                if(text.equals("/action")){
+                if (text.equals("/action")) {
+                    SendChatAction chatAction = SendChatAction.builder()
+                            .chatId(update.getMessage().getChatId())
+                            .action("typing")
+                            .build();
+
                     telegramClient.execute(chatAction);
                 }
-                if (text.equals("/img")){
-                    telegramClient.execute(fileService.sendImageFromLocal(
+                if (text.equals("/img")) {
+                    telegramClient.execute(utils.sendImageFromLocal(
                             "img/album/",
                             "img.png",
                             update.getMessage().getChatId()
                     ));
                 }
+                if (text.equals("/sticker")) {
+                    InputFile sticker = new InputFile("CAACAgIAAxkBAAEQKhFpWSM6R1OSsqzZQDGStSi8B4zjZAACprgAAoJrgErD24zNopReGzgE");
+
+                    SendSticker sendSticker = new SendSticker(
+                            update.getMessage()
+                                  .getChatId()
+                                  .toString(), sticker);
+                    sendSticker.setReplyToMessageId(update.getMessage().getMessageId());
+
+                    telegramClient.execute(sendSticker);
+                }
+
+                if (text.equals("/keyboard")){
+                    telegramClient.execute(utils.keyboard(update.getMessage().getChatId().toString()));
+                }
+
+                if (text.equals("/button")){
+                    telegramClient.execute(utils.functionalButton(update.getMessage().getChatId().toString()));
+                }
+
+                if (text.equals("/whoiam")){
+                    String msd = utils.getUserInfo(update);
+                    telegramClient.execute(utils.message(update,msd));
+
+                }
+
             }
 
-            if (update.hasMessage() && update.getMessage().hasPhoto()){
-                telegramClient.execute(fileService.photoEcho(update));
+            if (update.hasMessage() && update.getMessage().hasPhoto()) {
+                telegramClient.execute(utils.photoEcho(update));
 
                 // что пользователь загрузил
-                PhotoSize photo = fileService.getPhoto(update);
-                String filePath = fileService.getFilePath(photo);
+                PhotoSize photo = utils.getPhoto(update);
+                String filePath = utils.getFilePath(photo);
                 System.out.println("Пользователь загрузил на сервер телеграм файл: " + filePath);
 
                 // скачать с серверов телеграмм
                 File downloadFile = telegramClient.downloadFile(filePath);
-                System.out.println("Скачали загруженный пользователем файл: "+downloadFile.getAbsolutePath());
+                System.out.println("Скачали загруженный пользователем файл: " + downloadFile.getAbsolutePath());
             }
 
         } catch (TelegramApiException e) {
@@ -70,4 +95,6 @@ public class BotCore implements LongPollingSingleThreadUpdateConsumer {
         }
 
     }
+
+
 }

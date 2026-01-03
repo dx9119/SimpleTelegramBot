@@ -3,7 +3,7 @@ package ru.dx9119;
 import org.telegram.telegrambots.longpolling.TelegramBotsLongPollingApplication;
 
 public class Main {
-    public static void main(String[] args) {
+    public static void main(String[] args) throws Exception {
         try {
             String key = System.getenv("TELEGRAM_TOKEN");
 
@@ -11,7 +11,7 @@ public class Main {
             botsApplication.registerBot(key, new BotCore(key));
 
         } catch (Exception e) {
-            e.printStackTrace();
+            throw new Exception(e);
         }
     }
 }
