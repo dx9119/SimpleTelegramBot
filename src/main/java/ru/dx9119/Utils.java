@@ -1,6 +1,5 @@
 package ru.dx9119;
 
-import org.jetbrains.annotations.NotNull;
 import org.telegram.telegrambots.meta.api.methods.GetFile;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.methods.send.SendPhoto;
